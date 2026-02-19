@@ -35,9 +35,17 @@ class UdaPlayAgent:
         self.tavily_key = tavily_api_key or os.getenv("TAVILY_API_KEY")
         self.openai_client = OpenAI(api_key=self.openai_key) if self.openai_key else None
         self.tavily_client = TavilyClient(api_key=self.tavily_key) if self.tavily_key else None
+        self.chat_history: list[tuple[str, str]] = []
 
     def retrieve_game(self, question: str, top_k: int = 5) -> RetrievalResult:
         return self.vector_store.semantic_search(query=question, top_k=top_k)
+
+    def _build_query_with_history(self, question: str, max_turns: int = 3) -> str:
+        recent_questions = [user for user, _ in self.chat_history[-max_turns:]]
+        if not recent_questions:
+            return question
+        recent_context = "\n".join(f"- {item}" for item in recent_questions)
+        return f"Conversation context:\n{recent_context}\nFollow-up question: {question}"
 
     def evaluate_retrieval(self, retrieval: RetrievalResult) -> EvaluationResult:
         if not retrieval.matches:
@@ -91,13 +99,14 @@ class UdaPlayAgent:
 
     def answer(self, question: str, top_k: int = 5) -> AgentAnswer:
         state = AgentState.RETRIEVE
-        retrieval = RetrievalResult(query=question, matches=[])
+        contextual_question = self._build_query_with_history(question)
+        retrieval = RetrievalResult(query=contextual_question, matches=[])
         evaluation = EvaluationResult(sufficiency="low", confidence=0.0, rationale="Not evaluated yet.")
         web_results: list[WebSearchItem] = []
 
         while True:
             if state == AgentState.RETRIEVE:
-                retrieval = self.retrieve_game(question=question, top_k=top_k)
+                retrieval = self.retrieve_game(question=contextual_question, top_k=top_k)
                 state = AgentState.EVALUATE
                 continue
 
@@ -107,12 +116,14 @@ class UdaPlayAgent:
                 continue
 
             if state == AgentState.WEB_SEARCH:
-                web_results = self.game_web_search(question=question)
+                web_results = self.game_web_search(question=contextual_question)
                 state = AgentState.RESPOND
                 continue
 
             if state == AgentState.RESPOND:
-                return self._build_response(question, retrieval, evaluation, web_results)
+                answer = self._build_response(question, retrieval, evaluation, web_results)
+                self.chat_history.append((question, answer.answer))
+                return answer
 
     def _build_response(
         self,
@@ -133,11 +144,13 @@ class UdaPlayAgent:
             context_blocks.append(f"Web Source: {item.title}\n{item.content}")
 
         context = "\n\n".join(context_blocks[:8]) or "No supporting context found."
+        history = self._format_chat_history()
 
         if self.openai_client:
             prompt = (
                 "You are UdaPlay, a video game research assistant.\n"
                 "Answer using the provided context, be explicit about uncertainty, and cite sources inline.\n"
+                f"Conversation History:\n{history}\n\n"
                 f"Question: {question}\n\n"
                 f"Context:\n{context}"
             )
@@ -165,3 +178,14 @@ class UdaPlayAgent:
             citations=sorted(set(citations)),
             used_web_fallback=bool(web_results),
         )
+
+    def _format_chat_history(self, max_turns: int = 6) -> str:
+        if not self.chat_history:
+            return "No previous messages."
+
+        history_lines: list[str] = []
+        for user_message, assistant_message in self.chat_history[-max_turns:]:
+            history_lines.append(f"User: {user_message}")
+            history_lines.append(f"Assistant: {assistant_message}")
+
+        return "\n".join(history_lines)

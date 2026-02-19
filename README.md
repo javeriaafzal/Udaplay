@@ -55,6 +55,12 @@ Run without `--rebuild` to query an already persisted ChromaDB index:
 python -m udaplay.main "When did Hades release?"
 ```
 
+Run an interactive multi-query session (keeps conversation context in-memory):
+
+```bash
+python -m udaplay.main --session
+```
+
 ## Project Structure
 
 - `udaplay/vector_store.py`: ChromaDB manager and semantic search.
