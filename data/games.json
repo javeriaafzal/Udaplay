@@ -1,0 +1,29 @@
+[
+  {
+    "id": "zelda_botw",
+    "title": "The Legend of Zelda: Breath of the Wild",
+    "description": "An open-world action-adventure game where Link explores Hyrule and defeats Calamity Ganon.",
+    "genre": ["Action-adventure", "Open world"],
+    "publisher": "Nintendo",
+    "release_date": "2017-03-03",
+    "platforms": ["Nintendo Switch", "Wii U"]
+  },
+  {
+    "id": "elden_ring",
+    "title": "Elden Ring",
+    "description": "A dark fantasy action RPG featuring vast exploration, deep combat, and challenging boss encounters.",
+    "genre": ["Action RPG", "Soulslike"],
+    "publisher": "Bandai Namco Entertainment",
+    "release_date": "2022-02-25",
+    "platforms": ["PlayStation 5", "PlayStation 4", "Xbox Series X|S", "Xbox One", "PC"]
+  },
+  {
+    "id": "hades",
+    "title": "Hades",
+    "description": "A roguelike dungeon crawler where Zagreus battles out of the Underworld with Olympian boons.",
+    "genre": ["Roguelike", "Action"],
+    "publisher": "Supergiant Games",
+    "release_date": "2020-09-17",
+    "platforms": ["PC", "Nintendo Switch", "PlayStation", "Xbox"]
+  }
+]
