@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 from typing import Iterable
 
@@ -9,6 +10,36 @@ from chromadb.api.models.Collection import Collection
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
 
 from .models import GameRecord, RetrievalItem, RetrievalResult
+
+
+class LocalHashEmbeddingFunction:
+    """Offline-safe embedding function based on deterministic token hashing."""
+
+    def __init__(self, dim: int = 256) -> None:
+        self.dim = dim
+
+    def __call__(self, input: list[str]) -> list[list[float]]:
+        vectors: list[list[float]] = []
+        for text in input:
+            vector = [0.0] * self.dim
+            for token in text.lower().split():
+                idx = hash(token) % self.dim
+                vector[idx] += 1.0
+
+            norm = math.sqrt(sum(v * v for v in vector))
+            if norm > 0:
+                vector = [v / norm for v in vector]
+            vectors.append(vector)
+        return vectors
+
+    def name(self) -> str:
+        return "local-hash-embedding"
+
+    def embed_documents(self, input: list[str]) -> list[list[float]]:
+        return self.__call__(input)
+
+    def embed_query(self, input: list[str]) -> list[list[float]]:
+        return self.__call__(input)
 
 
 class VectorStoreManager:
@@ -22,12 +53,11 @@ class VectorStoreManager:
         embedding_model: str = "text-embedding-3-small",
     ) -> None:
         self.client = chromadb.PersistentClient(path=persist_path)
-        embedding_function = None
-        if openai_api_key:
-            embedding_function = OpenAIEmbeddingFunction(
-                api_key=openai_api_key,
-                model_name=embedding_model,
-            )
+        embedding_function = (
+            OpenAIEmbeddingFunction(api_key=openai_api_key, model_name=embedding_model)
+            if openai_api_key
+            else LocalHashEmbeddingFunction()
+        )
 
         self.collection: Collection = self.client.get_or_create_collection(
             name=collection_name,

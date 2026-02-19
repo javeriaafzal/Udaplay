@@ -103,25 +103,41 @@ class UdaPlayAgent:
         retrieval = RetrievalResult(query=contextual_question, matches=[])
         evaluation = EvaluationResult(sufficiency="low", confidence=0.0, rationale="Not evaluated yet.")
         web_results: list[WebSearchItem] = []
+        execution_trace: list[str] = [f"State entered: {state.value}"]
+        tool_usage: list[str] = []
 
         while True:
             if state == AgentState.RETRIEVE:
                 retrieval = self.retrieve_game(question=contextual_question, top_k=top_k)
+                tool_usage.append(f"VectorStore.semantic_search(top_k={top_k})")
+                execution_trace.append(f"Retrieved {len(retrieval.matches)} local candidates.")
                 state = AgentState.EVALUATE
+                execution_trace.append(f"State transition: {AgentState.EVALUATE.value}")
                 continue
 
             if state == AgentState.EVALUATE:
                 evaluation = self.evaluate_retrieval(retrieval)
+                execution_trace.append(
+                    "Retrieval evaluation: "
+                    f"sufficiency={evaluation.sufficiency}, confidence={evaluation.confidence:.2f}."
+                )
                 state = AgentState.RESPOND if evaluation.sufficiency == "high" else AgentState.WEB_SEARCH
+                execution_trace.append(f"State transition: {state.value}")
                 continue
 
             if state == AgentState.WEB_SEARCH:
                 web_results = self.game_web_search(question=contextual_question)
+                tool_usage.append("Tavily.search(search_depth='advanced')")
+                execution_trace.append(f"Web fallback returned {len(web_results)} results.")
                 state = AgentState.RESPOND
+                execution_trace.append(f"State transition: {AgentState.RESPOND.value}")
                 continue
 
             if state == AgentState.RESPOND:
+                tool_usage.append(f"OpenAI.responses.create(model='{self.model}')" if self.openai_client else "LLM unavailable (no OPENAI_API_KEY)")
                 answer = self._build_response(question, retrieval, evaluation, web_results)
+                answer.execution_trace = execution_trace
+                answer.tool_usage = tool_usage
                 self.chat_history.append((question, answer.answer))
                 return answer
 

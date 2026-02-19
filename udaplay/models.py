@@ -48,3 +48,5 @@ class AgentAnswer(BaseModel):
     retrieval_evaluation: EvaluationResult
     citations: list[str] = Field(default_factory=list)
     used_web_fallback: bool = False
+    execution_trace: list[str] = Field(default_factory=list)
+    tool_usage: list[str] = Field(default_factory=list)
