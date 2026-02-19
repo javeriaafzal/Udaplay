@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import math
 from pathlib import Path
 from typing import Iterable
@@ -18,12 +19,16 @@ class LocalHashEmbeddingFunction:
     def __init__(self, dim: int = 256) -> None:
         self.dim = dim
 
+    def _stable_bucket(self, token: str) -> int:
+        digest = hashlib.sha256(token.encode("utf-8")).digest()
+        return int.from_bytes(digest[:8], byteorder="big") % self.dim
+
     def __call__(self, input: list[str]) -> list[list[float]]:
         vectors: list[list[float]] = []
         for text in input:
             vector = [0.0] * self.dim
             for token in text.lower().split():
-                idx = hash(token) % self.dim
+                idx = self._stable_bucket(token)
                 vector[idx] += 1.0
 
             norm = math.sqrt(sum(v * v for v in vector))
