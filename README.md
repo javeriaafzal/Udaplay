@@ -1,13 +1,13 @@
 # UdaPlay
 
-UdaPlay is an AI research agent focused on video games. It answers questions about:
+UdaPlay is an AI research agent focused on video games. As part of Building Agents- by Udacity.  It answers questions about:
 
 - game titles and details
 - release dates and platforms
 - genres and descriptions
 - publisher information
 
-  Part of the Udacity coursework 
+
 
 ## Architecture
 
