@@ -31,11 +31,17 @@ pip install -e .
 
 ## Environment
 
-Create a `.env` file (or export variables):
+Create a local `.env` from the provided mock env file:
 
 ```bash
-OPENAI_API_KEY=your_openai_key
-TAVILY_API_KEY=your_tavily_key
+cp .env.example .env
+```
+
+Then set real values for:
+
+```bash
+OPENAI_API_KEY=your_openai_api_key_here
+TAVILY_API_KEY=your_tavily_api_key_here
 ```
 
 > OpenAI is used for final natural-language response generation.
@@ -43,10 +49,18 @@ TAVILY_API_KEY=your_tavily_key
 
 ## Usage
 
+The run commands below are valid for this project (`python -m udaplay.main --help`):
+
 First ingest local data and ask a question:
 
 ```bash
 python -m udaplay.main "Who published Elden Ring and what platforms is it on?" --rebuild
+```
+
+Or use the installed CLI entry point:
+
+```bash
+udaplay "Who published Elden Ring and what platforms is it on?" --rebuild
 ```
 
 Run without `--rebuild` to query an already persisted ChromaDB index:
