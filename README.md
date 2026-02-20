@@ -75,6 +75,13 @@ Run an interactive multi-query session (keeps conversation context in-memory):
 python -m udaplay.main --session
 ```
 
+Session history is persisted to `logs/sessions/` by default:
+
+- `logs/sessions/sessions.jsonl`: append-only index of all sessions.
+- `logs/sessions/session-*.json`: full transcript for each run.
+
+You can override the directory with `--log-dir`.
+
 ## Project Structure
 
 - `udaplay/vector_store.py`: ChromaDB manager and semantic search.
